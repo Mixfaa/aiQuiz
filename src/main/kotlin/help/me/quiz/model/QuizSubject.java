@@ -1,4 +1,4 @@
-package help.me.aiQuiz.models;
+package help.me.quiz.model;
 
 public enum QuizSubject {
     MATH,

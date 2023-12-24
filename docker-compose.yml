@@ -1,13 +1,27 @@
 version: '3.8'
 services:
-  db:
-    image: postgres:latest
+  mongodb:
+    image: mongo
     ports:
-      - "5432:5432"
-    container_name: postgresContainer
-    restart: always
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=aiQuizDB
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: hashcode123
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data/redis
+    environment:
+      - REDIS_PASSWORD=hashcode123
+      - REDIS_USERNAME=root
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=16
 
+volumes:
+  mongo-data:
+  redis-data:
