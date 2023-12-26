@@ -5,9 +5,7 @@ import org.springframework.http.ResponseEntity
 
 open class BasicThrowable(val status: HttpStatusCode, message: String) : Throwable(message) {
     open fun toBody(): Any {
-        return object {
-            val message: String = this@BasicThrowable.localizedMessage
-        }
+        return mapOf("message" to message)
     }
 
     fun toResponseEntity(): ResponseEntity<*> {
@@ -18,9 +16,7 @@ open class BasicThrowable(val status: HttpStatusCode, message: String) : Throwab
 fun Throwable.toResponseEntity(): ResponseEntity<*> {
     if (this is BasicThrowable) return this.toResponseEntity()
 
-    return ResponseEntity.internalServerError().body(object {
-        val message: String = this@toResponseEntity.localizedMessage
-    })
+    return ResponseEntity.internalServerError().body(mapOf("message" to this.localizedMessage))
 }
 
 fun Result<*>.foldToResponseEntity(): ResponseEntity<*> {
@@ -28,4 +24,4 @@ fun Result<*>.foldToResponseEntity(): ResponseEntity<*> {
         { ResponseEntity.ok(it) },
         { it.toResponseEntity() }
     )
-}
+} 

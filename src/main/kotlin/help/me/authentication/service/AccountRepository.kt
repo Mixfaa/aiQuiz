@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface AccountRepository : MongoRepository<Account, ObjectId> {
     fun findByUsername(username: String): Account?
-    fun existsByUsername(username:String) : Boolean
+    fun existsByUsername(username: String): Boolean
 }
