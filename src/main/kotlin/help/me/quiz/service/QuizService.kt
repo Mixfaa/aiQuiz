@@ -1,5 +1,6 @@
 package help.me.quiz.service
 
+import help.me.authentication.model.Account
 import help.me.quiz.model.Quiz
 import help.me.quiz.model.QuizCached
 import help.me.quiz.model.QuizEntity
@@ -17,23 +18,29 @@ class QuizService(
     private val quizCachedRepository: QuizCachedRepository,
     private val quizRepository: QuizRepository
 ) {
-    fun saveCachedQuiz(cachedId: Long): Result<QuizEntity> {
+    fun saveCachedQuiz(cachedId: Long, creator: Account): Result<QuizEntity> {
         val cachedQuiz = quizCachedRepository.findByIdOrNull(cachedId)
             ?: return Result.failure(Throwable("Quiz not found in cache)"))
 
-        return Result.success(quizRepository.save(QuizEntity(cachedQuiz)))
+        return Result.success(quizRepository.save(QuizEntity(cachedQuiz, creator)))
     }
 
-    fun saveCustomQuiz(quiz: Quiz): Result<QuizEntity> {
-        return Result.success(quizRepository.save(QuizEntity(quiz)))
+    fun saveCustomQuiz(quiz: Quiz, creator: Account): Result<QuizEntity> {
+        return Result.success(quizRepository.save(QuizEntity(quiz, creator)))
     }
 
-    fun deleteQuiz(id: String) {
-        quizRepository.deleteById(ObjectId(id))
+    fun deleteQuiz(id: String, account: Account): Result<Unit> {
+        val quiz = quizRepository.findByIdAndCreator(ObjectId(id), account)
+            ?: return Result.failure(Throwable("Quiz not found or you are not it`s creator"))
+        quizRepository.delete(quiz)
+        return Result.success(Unit)
     }
 
-    fun deleteCachedQuiz(id: Long) {
-        return quizCachedRepository.deleteById(id)
+    fun deleteCachedQuiz(id: Long, account: Account): Result<Unit> {
+        val cachedQuiz = quizCachedRepository.findByIdAndCreator(id, account)
+            ?: return Result.failure(Throwable("Quiz not found or you are not it`s creator"))
+        quizCachedRepository.delete(cachedQuiz)
+        return Result.success(Unit)
     }
 
     fun searchForQuizzes(query: String, pageable: Pageable): Page<QuizEntity> {
@@ -49,14 +56,19 @@ class QuizService(
     }
 
     fun tryGenerateQuiz(
-        subject: QuizSubject, topic: String, complexity: String, questionsCount: Int, additionalInfo: String
+        subject: QuizSubject,
+        topic: String,
+        complexity: String,
+        questionsCount: Int,
+        additionalInfo: String,
+        creator: Account
     ): Result<Quiz> {
         val quizResult = quizProvider.getQuiz(subject, topic, complexity, questionsCount, additionalInfo)
         if (quizResult.isFailure) return quizResult
 
         val quiz = quizResult.getOrNull()!!
 
-        quizCachedRepository.save(QuizCached(quiz))
+        quizCachedRepository.save(QuizCached(quiz, creator))
 
         return quizResult
     }

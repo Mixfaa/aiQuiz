@@ -1,5 +1,6 @@
 package help.me.quiz.service
 
+import help.me.authentication.model.Account
 import help.me.quiz.model.QuizEntity
 import help.me.quiz.model.QuizSubject
 import org.bson.types.ObjectId
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.repository.Query
 interface QuizRepository : MongoRepository<QuizEntity, ObjectId> {
     @Query("{ \$text :  {\$search: \"?1\"}}")
     fun findAllByText(query: String, pageable: Pageable): Page<QuizEntity>
-
     fun findAllBySubject(subject: QuizSubject, pageable: Pageable): Page<QuizEntity>
+
+    fun findByIdAndCreator(id: ObjectId, creator: Account): QuizEntity?
 }

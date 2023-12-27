@@ -1,5 +1,6 @@
 package help.me.quiz.model;
 
+import help.me.authentication.model.Account;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,12 +14,14 @@ public class Quiz {
     private QuizSubject subject;
     private List<Question> questions;
     private String additionalInfo;
+    private Account creator;
 
-    public Quiz(String name, String topic, QuizSubject subject, List<Question> questions, String additionalInfo) {
+    public Quiz(String name, String topic, QuizSubject subject, List<Question> questions, String additionalInfo, Account creator) {
         this.name = name;
         this.topic = topic;
         this.subject = subject;
         this.questions = questions;
         this.additionalInfo = additionalInfo;
+        this.creator = creator;
     }
 }

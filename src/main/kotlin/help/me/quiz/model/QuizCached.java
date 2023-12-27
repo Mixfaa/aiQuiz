@@ -1,5 +1,6 @@
 package help.me.quiz.model;
 
+import help.me.authentication.model.Account;
 import jakarta.persistence.GeneratedValue;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
@@ -12,7 +13,7 @@ public class QuizCached extends Quiz implements Serializable {
     @GeneratedValue
     private long id;
 
-    public QuizCached(Quiz quiz) {
-        super(quiz.getName(), quiz.getTopic(), quiz.getSubject(), quiz.getQuestions(), quiz.getAdditionalInfo());
+    public QuizCached(Quiz quiz, Account creator) {
+        super(quiz.getName(), quiz.getTopic(), quiz.getSubject(), quiz.getQuestions(), quiz.getAdditionalInfo(), creator);
     }
 }
