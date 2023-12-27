@@ -44,6 +44,7 @@ class SpringConfiguration
             .authenticationProvider(authProvider)
             .authorizeHttpRequests {
                 it.requestMatchers("/api/**").authenticated()
+                it.requestMatchers("/check_auth").authenticated()
             }
             .build()
     }

@@ -32,5 +32,3 @@ class AiQuizApplication {
 fun main(args: Array<String>) {
     runApplication<AiQuizApplication>(*args)
 }
-
-

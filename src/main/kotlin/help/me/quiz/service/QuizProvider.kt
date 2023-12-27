@@ -1,4 +1,4 @@
-package help.me.quiz.service.quizProvider
+package help.me.quiz.service
 
 import help.me.quiz.model.Quiz
 import help.me.quiz.model.QuizSubject

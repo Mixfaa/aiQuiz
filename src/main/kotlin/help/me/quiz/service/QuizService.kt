@@ -5,7 +5,7 @@ import help.me.quiz.model.Quiz
 import help.me.quiz.model.QuizCached
 import help.me.quiz.model.QuizEntity
 import help.me.quiz.model.QuizSubject
-import help.me.quiz.service.quizProvider.QuizProvider
+import help.me.quiz.service.QuizProvider
 import org.bson.types.ObjectId
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

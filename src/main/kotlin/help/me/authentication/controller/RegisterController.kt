@@ -4,6 +4,7 @@ import help.me.authentication.model.RegisterRequest
 import help.me.authentication.service.AccountService
 import help.me.utils.exceptions.foldToResponseEntity
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -14,5 +15,10 @@ class RegisterController(
     @PostMapping("/register")
     fun register(request: RegisterRequest): ResponseEntity<*> {
         return accountService.registerAccount(request).foldToResponseEntity()
+    }
+
+    @GetMapping("/check_auth")
+    fun checkAuthentication(request: RegisterRequest) {
+
     }
 }
