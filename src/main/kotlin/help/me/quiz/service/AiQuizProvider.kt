@@ -5,10 +5,10 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest
 import com.theokanning.openai.completion.chat.ChatMessage
 import help.me.ai.service.AiProvider
 import help.me.quiz.model.Quiz
-import help.me.quiz.model.QuizEntity
 import help.me.quiz.model.QuizSubject
-import help.me.utils.exceptions.GenerationFailed
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 
 private fun writeQuizGenerationPrompt(
     topic: String,
@@ -48,35 +48,41 @@ private fun writeQuizGenerationPrompt(
 @Component
 class AiQuizProvider(private val objectMapper: ObjectMapper, private val aiProvider: AiProvider) : QuizProvider {
 
-    override fun getQuiz(
+    override fun quizzes(
         subject: QuizSubject,
         topic: String,
         complexity: String,
         questionsCount: Int,
         additionalInfo: String
-    ): Result<Quiz> {
-        try {
-            val prompt = writeQuizGenerationPrompt(topic, complexity, questionsCount, additionalInfo)
+    ): Flux<Quiz> {
+        val prompt = writeQuizGenerationPrompt(topic, complexity, questionsCount, additionalInfo)
 
-            val completionRequest = ChatCompletionRequest.builder()
-                .messages(listOf(ChatMessage("user", prompt)))
-                .model("gpt-3.5-turbo-16k")
-                .build()
+        val completionRequest = ChatCompletionRequest.builder()
+            .messages(listOf(ChatMessage("user", prompt)))
+            .model("gpt-3.5-turbo-16k")
+            .build()
 
-            val responseText =
-                aiProvider.service().createChatCompletion(completionRequest).choices.first().message.content
+        val completion = aiProvider.service().createChatCompletion(completionRequest)
 
-            val json = responseText.substring(responseText.indexOf('{'), responseText.lastIndexOf('}') + 1)
+        return completion.choices.toFlux()
+            .map {
+                try {
 
-            val quizEntityData = objectMapper.readValue(json, QuizEntity::class.java)
+                    val responseText = it.message.content
+                    val json = responseText.substring(responseText.indexOf('{'), responseText.lastIndexOf('}') + 1)
 
-            quizEntityData.subject = subject
-            quizEntityData.topic = topic
-            quizEntityData.additionalInfo = additionalInfo
+                    val quiz = objectMapper.readValue(json, Quiz::class.java)
 
-            return Result.success(quizEntityData)
-        } catch (ex: Exception) {
-            return Result.failure(GenerationFailed(ex))
-        }
+                    quiz.subject = subject
+                    quiz.topic = topic
+                    quiz.additionalInfo = additionalInfo
+
+                    return@map quiz
+                } catch (ex: Exception) {
+                    return@map null
+                }
+            }
+            .filter { it != null }
+            .cast(Quiz::class.java)
     }
 }

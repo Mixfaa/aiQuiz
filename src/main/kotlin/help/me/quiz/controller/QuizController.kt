@@ -2,15 +2,16 @@ package help.me.quiz.controller
 
 import help.me.authentication.model.Account
 import help.me.quiz.model.Quiz
+import help.me.quiz.model.QuizEntity
 import help.me.quiz.model.QuizSubject
 import help.me.quiz.service.QuizService
-import help.me.utils.exceptions.foldToResponseEntity
 import org.springframework.data.domain.PageRequest
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.security.Principal
 import java.util.*
 
@@ -19,43 +20,45 @@ import java.util.*
 class QuizController(
     val quizService: QuizService,
 ) {
+    val invalidPrincipalThrowable = Throwable("Principal is not instance of account")
+
     @GetMapping("/search")
-    fun searchForQuizzes(query: String, page: Int, limit: Int, principal: Principal): ResponseEntity<*> {
-        return ResponseEntity.ok(quizService.searchForQuizzes(query, PageRequest.of(page, limit)).toList())
+    fun searchForQuizzes(query: String, page: Int, limit: Int, principal: Principal): Flux<QuizEntity> {
+        return quizService.searchForQuizzes(query, PageRequest.of(page, limit))
     }
 
     @GetMapping("/search_by_subj")
-    fun getQuizzesBySubject(subject: QuizSubject, page: Int, limit: Int): ResponseEntity<*> {
-        return ResponseEntity.ok(quizService.searchForQuizzesBySubject(subject, PageRequest.of(page, limit)).toList())
+    fun getQuizzesBySubject(subject: QuizSubject, page: Int, limit: Int): Flux<QuizEntity> {
+        return quizService.searchForQuizzesBySubject(subject, PageRequest.of(page, limit))
     }
 
     @GetMapping("/list_all")
-    fun listQuizzes(page: Int, limit: Int): ResponseEntity<*> {
-        return ResponseEntity.ok(quizService.listQuizzes(PageRequest.of(page, limit)))
+    fun listQuizzes(page: Int, limit: Int): Flux<QuizEntity> {
+        return quizService.listQuizzes(PageRequest.of(page, limit))
     }
 
     @PostMapping("/delete_cached")
-    fun deleteCachedQuiz(id: Long, principal: Principal): ResponseEntity<*> {
-        if (principal !is Account) return ResponseEntity.notFound().build<Unit>()
-        return quizService.deleteCachedQuiz(id, principal).foldToResponseEntity()
+    fun deleteCachedQuiz(id: String, principal: Principal): Mono<Boolean> {
+        if (principal !is Account) return Mono.error(invalidPrincipalThrowable)
+        return quizService.deleteCachedQuiz(id, principal)
     }
 
     @PostMapping("/delete")
-    fun deleteQuiz(id: String, principal: Principal): ResponseEntity<*> {
-        if (principal !is Account) return ResponseEntity.notFound().build<Unit>()
-        return quizService.deleteQuiz(id, principal).foldToResponseEntity()
+    fun deleteQuiz(id: String, principal: Principal): Mono<Boolean> {
+        if (principal !is Account) return Mono.error(invalidPrincipalThrowable)
+        return quizService.deleteQuiz(id, principal)
     }
 
     @PostMapping("/save_cached")
-    fun saveCachedQuiz(id: Long, principal: Principal): ResponseEntity<*> {
-        if (principal !is Account) return ResponseEntity.notFound().build<Unit>()
-        return quizService.saveCachedQuiz(id, principal).foldToResponseEntity()
+    fun saveCachedQuiz(id: String, principal: Principal): Mono<QuizEntity> {
+        if (principal !is Account) return Mono.error(invalidPrincipalThrowable)
+        return quizService.saveCachedQuiz(id, principal)
     }
 
     @PostMapping("/save_custom")
-    fun saveCustomQuiz(quiz: Quiz, principal: Principal): ResponseEntity<*> {
-        if (principal !is Account) return ResponseEntity.notFound().build<Unit>()
-        return quizService.saveCustomQuiz(quiz, principal).foldToResponseEntity()
+    fun saveCustomQuiz(quiz: Quiz, principal: Principal): Mono<QuizEntity> {
+        if (principal !is Account) return Mono.error(invalidPrincipalThrowable)
+        return quizService.saveCustomQuiz(quiz, principal)
     }
 
     @PostMapping("/generate")
@@ -66,8 +69,8 @@ class QuizController(
         questionsCount: Int,
         principal: Principal,
         additionalInfo: Optional<String>
-    ): ResponseEntity<*> {
-        if (principal !is Account) return ResponseEntity.notFound().build<Unit>()
+    ): Flux<Quiz> {
+        if (principal !is Account) return Flux.error(invalidPrincipalThrowable)
         return quizService.tryGenerateQuiz(
             quizSubject,
             topic,
@@ -75,6 +78,6 @@ class QuizController(
             questionsCount,
             additionalInfo.orElse(""),
             principal
-        ).foldToResponseEntity()
+        )
     }
 }

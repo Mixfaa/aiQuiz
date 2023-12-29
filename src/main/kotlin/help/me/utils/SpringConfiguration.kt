@@ -12,40 +12,40 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 
 
-@Configuration
-class SpringConfiguration
-    (
-    private val accountService: AccountService,
-    private val bCryptPasswordEncoder: BCryptPasswordEncoder
-) {
-
-    private val authProvider = DaoAuthenticationProvider()
-        .also {
-            it.setPasswordEncoder(bCryptPasswordEncoder)
-            it.setUserDetailsService(accountService)
-        }
-
-    @Bean
-    fun authProvider(): AuthenticationProvider {
-        return authProvider
-    }
-
-    @Bean
-    fun authManager(http: HttpSecurity): AuthenticationManager {
-        return http.getSharedObject(AuthenticationManagerBuilder::class.java)
-            .authenticationProvider(authProvider)
-            .build()
-    }
-
-    @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        return http
-            .csrf { it.disable() }
-            .authenticationProvider(authProvider)
-            .authorizeHttpRequests {
-                it.requestMatchers("/api/**").authenticated()
-                it.requestMatchers("/check_auth").authenticated()
-            }
-            .build()
-    }
-}
+//@Configuration
+//class SpringConfiguration
+//    (
+//    private val accountService: AccountService,
+//    private val bCryptPasswordEncoder: BCryptPasswordEncoder
+//) {
+//
+//    private val authProvider = DaoAuthenticationProvider()
+//        .also {
+//            it.setPasswordEncoder(bCryptPasswordEncoder)
+//            it.setUserDetailsService(accountService)
+//        }
+//
+//    @Bean
+//    fun authProvider(): AuthenticationProvider {
+//        return authProvider
+//    }
+//
+//    @Bean
+//    fun authManager(http: HttpSecurity): AuthenticationManager {
+//        return http.getSharedObject(AuthenticationManagerBuilder::class.java)
+//            .authenticationProvider(authProvider)
+//            .build()
+//    }
+//
+//    @Bean
+//    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+//        return http
+//            .csrf { it.disable() }
+//            .authenticationProvider(authProvider)
+//            .authorizeHttpRequests {
+//                it.requestMatchers("/api/**").authenticated()
+//                it.requestMatchers("/check_auth").authenticated()
+//            }
+//            .build()
+//    }
+//}

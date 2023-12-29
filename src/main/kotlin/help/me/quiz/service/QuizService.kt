@@ -5,54 +5,57 @@ import help.me.quiz.model.Quiz
 import help.me.quiz.model.QuizCached
 import help.me.quiz.model.QuizEntity
 import help.me.quiz.model.QuizSubject
-import help.me.quiz.service.QuizProvider
 import org.bson.types.ObjectId
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.redis.core.ReactiveRedisOperations
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class QuizService(
     private val quizProvider: QuizProvider,
-    private val quizCachedRepository: QuizCachedRepository,
+    private val quizOps: ReactiveRedisOperations<String, QuizCached>,
     private val quizRepository: QuizRepository
 ) {
-    fun saveCachedQuiz(cachedId: Long, creator: Account): Result<QuizEntity> {
-        val cachedQuiz = quizCachedRepository.findByIdOrNull(cachedId)
-            ?: return Result.failure(Throwable("Quiz not found in cache)"))
-
-        return Result.success(quizRepository.save(QuizEntity(cachedQuiz, creator)))
+    fun saveCachedQuiz(cachedId: String, creator: Account): Mono<QuizEntity> {
+        return quizOps.opsForValue().get(cachedId)
+            .flatMap {
+                quizRepository.save(QuizEntity(it, creator))
+            }
     }
 
-    fun saveCustomQuiz(quiz: Quiz, creator: Account): Result<QuizEntity> {
-        return Result.success(quizRepository.save(QuizEntity(quiz, creator)))
+    fun saveCustomQuiz(quiz: Quiz, creator: Account): Mono<QuizEntity> {
+        return quizRepository.save(QuizEntity(quiz, creator))
     }
 
-    fun deleteQuiz(id: String, account: Account): Result<Unit> {
-        val quiz = quizRepository.findByIdAndCreator(ObjectId(id), account)
-            ?: return Result.failure(Throwable("Quiz not found or you are not it`s creator"))
-        quizRepository.delete(quiz)
-        return Result.success(Unit)
+    fun deleteQuiz(id: String, account: Account): Mono<Boolean> {
+        return quizRepository.deleteByIdAndCreator(ObjectId(id), account)
     }
 
-    fun deleteCachedQuiz(id: Long, account: Account): Result<Unit> {
-        val cachedQuiz = quizCachedRepository.findByIdAndCreator(id, account)
-            ?: return Result.failure(Throwable("Quiz not found or you are not it`s creator"))
-        quizCachedRepository.delete(cachedQuiz)
-        return Result.success(Unit)
+    fun deleteCachedQuiz(cachedId: String, account: Account): Mono<Boolean> {
+        return quizOps.opsForValue().get(cachedId)
+            .filter { it.creator == account }
+            .hasElement()
+            .flatMap { hasElement ->
+                if (hasElement)
+                    return@flatMap quizOps.delete(cachedId).thenReturn(true)
+                else
+                    return@flatMap Mono.just(false)
+            }
     }
 
-    fun searchForQuizzes(query: String, pageable: Pageable): Page<QuizEntity> {
+    fun searchForQuizzes(query: String, pageable: Pageable): Flux<QuizEntity> {
         return quizRepository.findAllByText(query, pageable)
     }
 
-    fun searchForQuizzesBySubject(subject: QuizSubject, pageable: Pageable): Page<QuizEntity> {
+    fun searchForQuizzesBySubject(subject: QuizSubject, pageable: Pageable): Flux<QuizEntity> {
         return quizRepository.findAllBySubject(subject, pageable)
     }
 
-    fun listQuizzes(pageable: Pageable): Page<QuizEntity> {
-        return quizRepository.findAll(pageable)
+    fun listQuizzes(pageable: Pageable): Flux<QuizEntity> {
+        return quizRepository.findAllBy(pageable)
     }
 
     fun tryGenerateQuiz(
@@ -62,14 +65,10 @@ class QuizService(
         questionsCount: Int,
         additionalInfo: String,
         creator: Account
-    ): Result<Quiz> {
-        val quizResult = quizProvider.getQuiz(subject, topic, complexity, questionsCount, additionalInfo)
-        if (quizResult.isFailure) return quizResult
-
-        val quiz = quizResult.getOrNull()!!
-
-        quizCachedRepository.save(QuizCached(quiz, creator))
-
-        return quizResult
+    ): Flux<Quiz> {
+        return quizProvider.quizzes(subject, topic, complexity, questionsCount, additionalInfo)
+            .doOnNext {
+                quizOps.opsForValue().set(UUID.randomUUID().toString(), QuizCached(it, creator))
+            }
     }
 }

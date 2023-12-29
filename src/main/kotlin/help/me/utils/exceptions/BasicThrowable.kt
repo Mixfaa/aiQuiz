@@ -24,4 +24,4 @@ fun Result<*>.foldToResponseEntity(): ResponseEntity<*> {
         { ResponseEntity.ok(it) },
         { it.toResponseEntity() }
     )
-} 
+}
