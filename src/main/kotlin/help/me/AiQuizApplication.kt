@@ -16,14 +16,15 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.web.reactive.config.EnableWebFlux
 
 
 @EnableMongoRepositories
 @EnableRedisRepositories
-//@EnableWebSecurity
 @EnableWebFlux
+@EnableWebFluxSecurity
 @Configuration
 @SpringBootApplication(exclude = [DataSourceAutoConfiguration::class])
 class AiQuizApplication {
@@ -45,7 +46,6 @@ class AiQuizApplication {
 
         return ReactiveRedisTemplate(factory, context)
     }
-
 }
 
 fun main(args: Array<String>) {

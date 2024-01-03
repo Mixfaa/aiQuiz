@@ -11,18 +11,14 @@ import retrofit2.converter.jackson.JacksonConverterFactory
 import java.time.Duration
 
 @Component
-class FreeAiProvider : AiProvider {
-    @Value("\${aiprovider.apikey}")
-    private final lateinit var aiApikey: String
+class FreeAiProvider(
+    @Value("\${aiprovider.apikey}") private val aiApiKey: String,
+    @Value("\${aiprovider.baseurl}") private val aiBaseurl: String,
+) : AiProvider {
 
-    @Value("\${aiprovider.baseurl}")
-    private final lateinit var aiBaseurl: String
-    private final lateinit var apiService: OpenAiService
-
-    @PostConstruct
-    private fun postConstruct() {
+    private val apiService: OpenAiService by lazy {
         val objectMapper = OpenAiService.defaultObjectMapper()
-        val httpClient = OpenAiService.defaultClient(aiApikey, Duration.ofSeconds(1000))
+        val httpClient = OpenAiService.defaultClient(aiApiKey, Duration.ofSeconds(1000))
 
         val retrofit = Retrofit.Builder().client(httpClient).baseUrl(aiBaseurl)
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
@@ -30,7 +26,7 @@ class FreeAiProvider : AiProvider {
 
         val openAiApi = retrofit.create(OpenAiApi::class.java)
 
-        apiService = OpenAiService(openAiApi)
+        OpenAiService(openAiApi)
     }
 
     override fun service(): OpenAiService {

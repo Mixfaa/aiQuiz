@@ -19,6 +19,6 @@ class RegisterController(
 
     @GetMapping("/check_auth")
     fun checkAuthentication(request: RegisterRequest) {
-
+        
     }
 }
