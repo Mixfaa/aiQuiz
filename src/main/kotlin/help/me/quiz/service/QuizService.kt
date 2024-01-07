@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.ReactiveRedisOperations
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.util.*
 
 @Service
@@ -31,7 +32,7 @@ class QuizService(
     }
 
     fun deleteQuiz(id: String, account: Account): Mono<Boolean> {
-        return quizRepository.deleteByIdAndCreator(ObjectId(id), account)
+        return quizRepository.deleteByIdAndCreator(id, account)
     }
 
     fun deleteCachedQuiz(cachedId: String, account: Account): Mono<Boolean> {
@@ -67,8 +68,9 @@ class QuizService(
         creator: Account
     ): Flux<Quiz> {
         return quizProvider.quizzes(subject, topic, complexity, questionsCount, additionalInfo)
+            .publishOn(Schedulers.boundedElastic())
             .doOnNext {
-                quizOps.opsForValue().set(UUID.randomUUID().toString(), QuizCached(it, creator))
+                quizOps.opsForValue().set(UUID.randomUUID().toString(), QuizCached(it, creator)).subscribe()
             }
     }
 }

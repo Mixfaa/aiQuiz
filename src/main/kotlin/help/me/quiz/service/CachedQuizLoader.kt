@@ -11,7 +11,7 @@ class CachedQuizLoader(
 ) {
     @PostConstruct
     fun loadData() {
-        factory.reactiveConnection.serverCommands().flushAll()
+        factory.reactiveConnection.serverCommands().flushAll().subscribe()
     }
 
 }

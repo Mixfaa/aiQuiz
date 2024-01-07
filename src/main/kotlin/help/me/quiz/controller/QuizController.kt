@@ -15,13 +15,13 @@ import reactor.core.publisher.Mono
 import java.security.Principal
 import java.util.*
 
+private val invalidPrincipalThrowable = Throwable("Principal is not instance of account")
+
 @RestController
 @RequestMapping("/api/quiz")
 class QuizController(
     val quizService: QuizService,
 ) {
-    val invalidPrincipalThrowable = Throwable("Principal is not instance of account")
-
     @GetMapping("/search")
     fun searchForQuizzes(query: String, page: Int, limit: Int, principal: Principal): Flux<QuizEntity> {
         return quizService.searchForQuizzes(query, PageRequest.of(page, limit))
